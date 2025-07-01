@@ -36,12 +36,12 @@ To use **`cafloodr`**, you need the standalone **CAFlood** binary (Windows):
 ### How to Download
 
 1. Go to the **CAFlood Software** page:  
-   [https://cafloodpro.com/caflood-software/](https://cafloodpro.com/caflood-software/) :contentReference[oaicite:1]{index=1}
+   [https://cafloodpro.com/caflood-software/](https://cafloodpro.com/caflood-software/)
 
 2. Click **"DOWNLOAD CAFLOOD FREE"** under the free version.
 
 3. Complete the form (name, email, organization, etc.).  
-   After submission, you'll receive a download link for the Windows executable.:contentReference[oaicite:2]{index=2}
+   After submission, you'll receive a download link for the Windows executable.
 
 ---
 
