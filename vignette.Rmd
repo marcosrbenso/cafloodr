@@ -1,10 +1,10 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "Preparing Input Data and Running CADDIES/CAFLOOD Using `cafloodr`"
+author: "Marcos Roberto Benso"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Preparing Input Data and Running CADDIES/CAFLOOD}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,50 +16,148 @@ knitr::opts_chunk$set(
 )
 ```
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+## Importa libraries
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
+```{r}
+library(imputeTS)
+library(zoo)
+library(gstat)
+library(sf)
+library(sp)
 
-## Vignette Info
+```
 
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
+## Interpolate precipitation data
 
-## Styles
 
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
 
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
+```{r}
 
-## Figures
+
+
+dataset <- read.csv("Data/rainfall_2021.csv")
+dataset
+
+stations <- (read.csv("Data/CoordenadasEstacoes (coordinate).csv"))
+coordinates(stations) <- ~X+Y
+
+aricanduva <- st_read("Data/aricanduva.shp")
+
+# IDW
+
+events <-
+  data.frame(
+    id = c("Event_1_SP"),
+    start = as.POSIXct(c("2021-01-25 20:00"),tz = "UTC"),
+    end =  as.POSIXct(c("2021-02-19 18:00"),tz = "UTC")
+  )
+
+rain_events <- c()
+
+for(t in 1:nrow(events)){
+  dates <- seq(from = (events$start[t]),
+               to = (events$end[t]),by = "10 min")
+
+
+  results <- rep(NA,length(dates))
+  for(i in 1:length(dates)){
+    tryCatch({
+      sub_sel <- dataset |>
+        subset(DATA == dates[i]) |>
+        merge(stations,
+              by.x = "Posto",
+              by.y = "ID") |>
+        dplyr::select(X,Y,Rain3) |>
+        na.omit() |>
+        st_as_sf(coords = c("X",'Y'),crs="WGS84") |>
+        st_transform(crs = st_crs(aricanduva))
+
+
+      rainSP <- as(sub_sel, 'Spatial')
+      neighbors <- length(rainSP) - 1
+      beta <- 2
+
+      idw_rain <- gstat::gstat(
+        formula = Rain3 ~ 1, # intercept-only model
+        data = rainSP,
+        nmax = neighbors,
+        set = list(idp = beta)
+      )
+
+      predict(
+        idw_rain, aricanduva
+      )$var1.pred -> results[i]
+
+    },error = function(e){
+      NA
+    })
+
+  }
+
+  rain_events[[t]] <- unlist(results)
+
+
+  write.csv(
+    data.frame(start = events$start[t],
+               end = events$end[t],
+               events = events$id[t],
+               prec = unlist(results)),
+    paste0(events$id[t],"prec.csv")
+  )
+}
+
+
+```
+
+## Setting up the working paths
+
+Define the input and output folders, and the path to your CAFLOOD executable:
+
+```{r}
+
+library(cafloodr)
+
+caflood_path <- "C:/Path/CAFLOOD"
+Input  <- "Data/"
+Output <- "E:\\01_DTI-A\\03_Analyses\\01_SP\\dem_resolution_outputs_certo_3\\"
+
+
+```
+
+## Running CAFLOOD
 
 The figure sizes have been customised so that you can easily put two images side-by-side. 
 
+### Set the parameters
+
 ```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+
+param <- list(alpha_fraction = 0.1,
+              roughness_global = 0.009, #0.06
+              slope_tolerance = 0.528,
+              boundary_ele = -9,
+              Raster_WD_Tolerance = 0.1,
+              Upstream_Reduction = 0.5)
+
+
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+### Run CAFLOOD
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
+You can now call the cafloodr_A01() function to process inputs, create the control file, and execute the model:
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+```{r}
 
-## More Examples
+cafloodr_A01(param,
+             caflood_path,
+             Input,
+             Output,
+             event_name = "Event_test",
+             dem_name = "ari_lidar_30m",
+             path2 = "",
+             outlet_path = "estacoes.shp",
+             rain_path = "Event_1_SP_prec.csv",
+             stream_network = "aricanduva_streams2",
+             snap_dist = 30)
 
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
 ```
-
-Also a quote using `>`:
-
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
