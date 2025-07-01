@@ -1,0 +1,38 @@
+Package: cafloodr
+Type: Package
+Title: Tools to Preprocess DEMs and Run the CADDIES/CAFlood Flood Model in R
+Version: 0.1.0
+Authors@R: 
+    person("Marcos", "Roberto Benso", 
+           email = "marcosbenso@gmail.com", 
+           role = c("aut", "cre"))
+Description: 
+    Provides tools for preprocessing Digital Elevation Models (DEMs) and 
+    running the 2D cellular automata flood model CADDIES/CAFlood 
+    (<https://doi.org/10.1016/j.proeng.2016.07.409>) directly from R. 
+    Functions include DEM conditioning, rainfall and inflow setup, 
+    control point generation, and automated model execution. 
+    Designed for flood modeling and hydrodynamic simulation at the catchment scale.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
+Depends: 
+    R (>= 4.1)
+Imports:
+    sf,
+    dplyr,
+    terra,
+    raster,
+    stars,
+    whitebox,
+    reticulate,
+    utils,
+    stats,
+    methods,
+    forecast
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
