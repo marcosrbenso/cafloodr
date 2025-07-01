@@ -31,7 +31,35 @@ devtools::install_github("marcosrbenso/cafloodr")
 
 ## Install CADDIES/CAFLOOD
 
-Download https://cafloodpro.com/caflood-software/
+To use **`cafloodr`**, you need the standalone **CAFlood** binary (Windows):
+
+### How to Download
+
+1. Go to the **CAFlood Software** page:  
+   [https://cafloodpro.com/caflood-software/](https://cafloodpro.com/caflood-software/) :contentReference[oaicite:1]{index=1}
+
+2. Click **"DOWNLOAD CAFLOOD FREE"** under the free version.
+
+3. Complete the form (name, email, organization, etc.).  
+   After submission, you'll receive a download link for the Windows executable.:contentReference[oaicite:2]{index=2}
+
+---
+
+### What You’ll Get
+
+- A Windows `.zip` or `.exe` package containing:
+  - `caflood.exe` (the core hydrodynamic simulation engine)
+  - Example input files and documentation (e.g., `CADDIES-manual-caflood-110.pdf`):contentReference[oaicite:3]{index=3}
+
+---
+
+## Run CADDIES/CAFLOOD in R
+
+After downloading:
+
+```bash
+# Unzip and copy caflood.exe to a folder, e.g.:
+C:/Models/CAFlood/caflood.exe
 
 ## Run CAflood in R
 
