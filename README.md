@@ -212,7 +212,7 @@ cafloodr_A01(
 
 # Vignettes
 
-## Importa libraries
+## Import libraries
 
 ```
 library(imputeTS)
@@ -220,6 +220,7 @@ library(zoo)
 library(gstat)
 library(sf)
 library(sp)
+library(cafloodr)
 
 ```
 
@@ -310,7 +311,7 @@ Define paths to the CAFLOOD executable, input folder, and output directory.
 
 ```
 
-library(cafloodr)
+
 
 caflood_path <- "C:/Path/CAFLOOD"  # Path to caflood.exe
 Input <- "Data/"                   # Folder containing model inputs
