@@ -48,10 +48,106 @@ To use **`cafloodr`**, you need the standalone **CAFlood** binary (Windows):
 ### What You’ll Get
 
 - A Windows `.zip` or `.exe` package containing:
-  - `caflood.exe` (the core hydrodynamic simulation engine)
-  - Example input files and documentation (e.g., `CADDIES-manual-caflood-110.pdf`):contentReference[oaicite:3]{index=3}
+  - `caflood.exe` (the core hydrodynamic simulation engine) that must be saved 
+  - Example input files and documentation
 
 ---
+
+## Input data
+
+### DEM
+
+The **Digital Elevation Model (DEM)** provides the terrain surface for hydrological and hydrodynamic calculations.
+
+**Requirements:**
+
+- **Format**: GeoTIFF (`.tif`) or ASCII Grid (`.asc`)
+- **Coordinate Reference System**: Projected in **metric units** (e.g., UTM)
+- **Units**: Elevation values in **meters**
+- **Resolution**: High-resolution (1–10 meters) recommended for local-scale or urban studies
+
+Use the `terra::rast()` or `raster::raster()` functions to load and inspect your DEM in R:
+
+```r
+library(terra)
+dem <- rast("path/to/dem.tif")
+plot(dem)
+```
+### Outlets
+Outlet points define where the model extracts simulated hydrographs (e.g., water depth and velocity over time).
+
+Format Requirements
+
+- **File format**: ESRI Shapefile (`.shp`) with accompanying `.dbf`, `.shx`, and `.prj` files.
+- **Geometry type**: `POINT`
+- **Coordinate Reference System**: Must match the DEM's CRS (typically a UTM projection in meters).
+- **Attribute field**: Must include a numeric column named `ID` to uniquely identify each outlet.
+
+Example
+
+| ID   | geometry (X, Y)       |
+|------|------------------------|
+| 11   | POINT (450300, 7456300)|
+| 157  | POINT (451000, 7455000)|
+| 1001 | POINT (452000, 7454200)|
+
+
+```r
+library(sf)
+
+outlets <- st_read("data/outlets.shp")
+head(outlets)
+
+# Check if 'ID' exists
+if (!"ID" %in% names(outlets)) {
+  stop("Outlet shapefile must contain an 'ID' column.")
+}
+
+# Visualize
+plot(outlets["ID"], main = "Outlet Points")
+```
+
+### Precipitation file
+
+Rainfall drives the flood simulation and must be provided as a CSV file with regular time steps.
+
+Format Requirements
+File format: .csv
+
+Columns:
+
+start: Start time of rainfall step (YYYY-MM-DD HH:MM:SS)
+
+end: End time of rainfall step
+
+events: Name of the rainfall event
+
+prec: Rainfall depth/intensity in millimeters (mm)
+| Row | Start               | End                 | Events     | Prec               |
+|-----|---------------------|---------------------|------------|--------------------|
+| 1   | 2017-04-06 20:00:00 | 2017-04-07 18:00:00 | Event_1_SP | 0                  |
+| 2   | 2017-04-06 20:00:00 | 2017-04-07 18:00:00 | Event_1_SP | 0                  |
+| 3   | 2017-04-06 20:00:00 | 2017-04-07 18:00:00 | Event_1_SP | 0                  |
+| 4   | 2017-04-06 20:00:00 | 2017-04-07 18:00:00 | Event_1_SP | 0                  |
+| 5   | 2017-04-06 20:00:00 | 2017-04-07 18:00:00 | Event_1_SP | 0.00749712655111925|
+| 6   | 2017-04-06 20:00:00 | 2017-04-07 18:00:00 | Event_1_SP | 0                  |
+| 7   | 2017-04-06 20:00:00 | 2017-04-07 18:00:00 | Event_1_SP | 0                  |
+| 8   | 2017-04-06 20:00:00 | 2017-04-07 18:00:00 | Event_1_SP | 0                  |
+
+```r
+rain <- read.csv("data/rain_event.csv")
+
+# Check structure
+str(rain)
+
+# Optional: Impute missing values
+library(imputeTS)
+rain$prec <- na_kalman(rain$prec)
+
+# Visualize time series
+plot(rain$start, rain$prec, type = "l", col = "blue",
+     xlab = "Time", ylab = "Rainfall (mm)", main = "Rainfall Time Series")
+```
 
 ## Run CADDIES/CAFLOOD in R
 
