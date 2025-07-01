@@ -112,17 +112,15 @@ plot(outlets["ID"], main = "Outlet Points")
 Rainfall drives the flood simulation and must be provided as a CSV file with regular time steps.
 
 Format Requirements
-File format: .csv
+- File format: `.csv`
+- Columns:
+  - `Row`
+  - `Start`: Start time of rainfall step (YYYY-MM-DD HH:MM:SS)
+  - `End`: End time of rainfall step
+  - `Events`: Name of the rainfall event
+  - `Prec`: Rainfall depth/intensity in millimeters (mm/10min)
 
-Columns:
 
-start: Start time of rainfall step (YYYY-MM-DD HH:MM:SS)
-
-end: End time of rainfall step
-
-events: Name of the rainfall event
-
-prec: Rainfall depth/intensity in millimeters (mm)
 | Row | Start               | End                 | Events     | Prec               |
 |-----|---------------------|---------------------|------------|--------------------|
 | 1   | 2017-04-06 20:00:00 | 2017-04-07 18:00:00 | Event_1_SP | 0                  |
@@ -158,6 +156,7 @@ After downloading:
 C:/Models/CAFlood/caflood.exe
 
 ## Run CAflood in R
+```
 
 ```r
 
@@ -200,7 +199,7 @@ cafloodr_A01(
   snap_dist = snap_dist
 )
 
-
+```
 
 
 
