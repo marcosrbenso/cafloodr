@@ -1,6 +1,14 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# cafloodr <img src="https://img.shields.io/badge/R-CAFlood-blue.svg" align="right" />
+# Outline
+
+[cafloodr](#cafloodr) Introduction to CAFLOOD in R 
+
+[vignettes](#vignettes) Full workflow on how to run CAFLOOD in R
+
+# cafloodr
+
+<img src="https://img.shields.io/badge/R-CAFlood-blue.svg" align="right" />
 
 <!-- badges: start -->
 <!-- You can add badges like CRAN, GitHub Actions, etc., if desired -->
@@ -202,5 +210,158 @@ cafloodr_A01(
 ```
 
 
+# Vignettes
+
+## Importa libraries
+
+```
+library(imputeTS)
+library(zoo)
+library(gstat)
+library(sf)
+library(sp)
+
+```
+
+## Interpolate precipitation data
+
+We start by preparing spatially distributed rainfall input via **Inverse Distance Weighting (IDW)**. This example processes data from multiple rainfall stations, interpolates over a catchment shapefile (aricanduva), and writes a precipitation file in CSV format compatible with cafloodr.
+
+```
+
+
+dataset <- read.csv("Data/rainfall_2021.csv")
+dataset
+
+stations <- (read.csv("Data/CoordenadasEstacoes (coordinate).csv"))
+coordinates(stations) <- ~X+Y
+
+aricanduva <- st_read("Data/aricanduva.shp")
+
+# IDW
+
+events <-
+  data.frame(
+    id = c("Event_1_SP"),
+    start = as.POSIXct(c("2021-01-25 20:00"),tz = "UTC"),
+    end =  as.POSIXct(c("2021-02-19 18:00"),tz = "UTC")
+  )
+
+rain_events <- c()
+
+for(t in 1:nrow(events)){
+  dates <- seq(from = (events$start[t]),
+               to = (events$end[t]),by = "10 min")
+
+
+  results <- rep(NA,length(dates))
+  for(i in 1:length(dates)){
+    tryCatch({
+      sub_sel <- dataset |>
+        subset(DATA == dates[i]) |>
+        merge(stations,
+              by.x = "Posto",
+              by.y = "ID") |>
+        dplyr::select(X,Y,Rain3) |>
+        na.omit() |>
+        st_as_sf(coords = c("X",'Y'),crs="WGS84") |>
+        st_transform(crs = st_crs(aricanduva))
+
+
+      rainSP <- as(sub_sel, 'Spatial')
+      neighbors <- length(rainSP) - 1
+      beta <- 2
+
+      idw_rain <- gstat::gstat(
+        formula = Rain3 ~ 1, # intercept-only model
+        data = rainSP,
+        nmax = neighbors,
+        set = list(idp = beta)
+      )
+
+      predict(
+        idw_rain, aricanduva
+      )$var1.pred -> results[i]
+
+    },error = function(e){
+      NA
+    })
+
+  }
+
+  rain_events[[t]] <- unlist(results)
+
+
+  write.csv(
+    data.frame(start = events$start[t],
+               end = events$end[t],
+               events = events$id[t],
+               prec = unlist(results)),
+    paste0(events$id[t],"prec.csv")
+  )
+}
+
+
+```
+
+## Setting up the working paths
+
+Define paths to the CAFLOOD executable, input folder, and output directory.
+
+```
+
+library(cafloodr)
+
+caflood_path <- "C:/Path/CAFLOOD"  # Path to caflood.exe
+Input <- "Data/"                   # Folder containing model inputs
+Output <- "E:/flood_model_results/"  # Folder to store results
+
+
+```
+
+## Running CAFLOOD
+
+
+### Set the parameters
+Set up the key simulation parameters using a named list. These parameters control the CAFLOOD simulation engine.
+
+```{r, fig.show='hold'}
+
+param <- list(
+  alpha_fraction = 0.1,
+  roughness_global = 0.009,       # Manning’s n (lower = faster flow)
+  slope_tolerance = 0.528,
+  boundary_ele = -9,              # Default boundary elevation
+  Raster_WD_Tolerance = 0.1,
+  Upstream_Reduction = 0.5
+)
+
+
+```
+
+### Run CAFLOOD
+
+Call the `cafloodr_A01()` wrapper to run a full simulation, including:
+
+- Preprocessing DEM and rainfall
+- Creating control files
+- Snapping outlet points
+- Executing the flood simulation
+
+```
+
+cafloodr_A01(
+  param = param,
+  caflood_path = caflood_path,
+  Input = Input,
+  Output = Output,
+  event_name = "Event_test",
+  dem_name = "ari_lidar_30m",  # name of DEM (without extension)
+  path2 = "",
+  outlet_path = "estacoes.shp",
+  rain_path = "Event_1_SP_prec.csv",
+  stream_network = "aricanduva_streams2",  # name (without extension)
+  snap_dist = 30
+)
 
 ```
