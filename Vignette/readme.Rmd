@@ -1,24 +1,10 @@
----
-title: "Preparing Input Data and Running CADDIES/CAFLOOD Using `cafloodr`"
-author: "Marcos Roberto Benso"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Preparing Input Data and Running CADDIES/CAFLOOD}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
+<!-- README.md is generated from README.Rmd. Please edit that file -->
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
+# Vignettes
 
 ## Importa libraries
 
-```{r}
+```
 library(imputeTS)
 library(zoo)
 library(gstat)
@@ -29,10 +15,9 @@ library(sp)
 
 ## Interpolate precipitation data
 
+We start by preparing spatially distributed rainfall input via **Inverse Distance Weighting (IDW)**. This example processes data from multiple rainfall stations, interpolates over a catchment shapefile (aricanduva), and writes a precipitation file in CSV format compatible with cafloodr.
 
-
-```{r}
-
+```
 
 
 dataset <- read.csv("Data/rainfall_2021.csv")
@@ -111,53 +96,62 @@ for(t in 1:nrow(events)){
 
 ## Setting up the working paths
 
-Define the input and output folders, and the path to your CAFLOOD executable:
+Define paths to the CAFLOOD executable, input folder, and output directory.
 
-```{r}
+```
 
 library(cafloodr)
 
-caflood_path <- "C:/Path/CAFLOOD"
-Input  <- "Data/"
-Output <- "E:\\01_DTI-A\\03_Analyses\\01_SP\\dem_resolution_outputs_certo_3\\"
+caflood_path <- "C:/Path/CAFLOOD"  # Path to caflood.exe
+Input <- "Data/"                   # Folder containing model inputs
+Output <- "E:/flood_model_results/"  # Folder to store results
 
 
 ```
 
 ## Running CAFLOOD
 
-The figure sizes have been customised so that you can easily put two images side-by-side. 
 
 ### Set the parameters
+Set up the key simulation parameters using a named list. These parameters control the CAFLOOD simulation engine.
 
 ```{r, fig.show='hold'}
 
-param <- list(alpha_fraction = 0.1,
-              roughness_global = 0.009, #0.06
-              slope_tolerance = 0.528,
-              boundary_ele = -9,
-              Raster_WD_Tolerance = 0.1,
-              Upstream_Reduction = 0.5)
+param <- list(
+  alpha_fraction = 0.1,
+  roughness_global = 0.009,       # Manning’s n (lower = faster flow)
+  slope_tolerance = 0.528,
+  boundary_ele = -9,              # Default boundary elevation
+  Raster_WD_Tolerance = 0.1,
+  Upstream_Reduction = 0.5
+)
 
 
 ```
 
 ### Run CAFLOOD
 
-You can now call the cafloodr_A01() function to process inputs, create the control file, and execute the model:
+Call the `cafloodr_A01()` wrapper to run a full simulation, including:
 
-```{r}
+- Preprocessing DEM and rainfall
+- Creating control files
+- Snapping outlet points
+- Executing the flood simulation
 
-cafloodr_A01(param,
-             caflood_path,
-             Input,
-             Output,
-             event_name = "Event_test",
-             dem_name = "ari_lidar_30m",
-             path2 = "",
-             outlet_path = "estacoes.shp",
-             rain_path = "Event_1_SP_prec.csv",
-             stream_network = "aricanduva_streams2",
-             snap_dist = 30)
+```
+
+cafloodr_A01(
+  param = param,
+  caflood_path = caflood_path,
+  Input = Input,
+  Output = Output,
+  event_name = "Event_test",
+  dem_name = "ari_lidar_30m",  # name of DEM (without extension)
+  path2 = "",
+  outlet_path = "estacoes.shp",
+  rain_path = "Event_1_SP_prec.csv",
+  stream_network = "aricanduva_streams2",  # name (without extension)
+  snap_dist = 30
+)
 
 ```
