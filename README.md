@@ -6,7 +6,7 @@
 
 [vignettes](#vignettes) Full workflow on how to run CAFLOOD in R
 
-# cafloodr
+# cafloodr: Caddies/Caflood for R
 
 <img src="https://img.shields.io/badge/R-CAFlood-blue.svg" align="right" />
 
